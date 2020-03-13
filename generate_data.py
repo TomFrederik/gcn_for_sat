@@ -5,6 +5,7 @@ import argparse
 import pysat.solvers as solv
 from pysat.solvers import Glucose3
 import time
+import os
 
 def get_clause(n, dists):
     '''
@@ -54,6 +55,11 @@ def main(config):
     # set random seed
     np.random.seed(config['seed'])
 
+    # get path of code file
+    file_dir = os.path.dirname(os.path.realpath(__file__))
+    data_path = file_dir + config['data_path']
+    print('Data path is ' + data_path)
+    
     # instantiate distributions for nbr of literals per clause
     geo = stats.geom(config['geo_p'])
     bern = stats.bernoulli(config['bern_p'])
@@ -97,7 +103,7 @@ def main(config):
         dataset.append([sat_list_phi, list_phi])
 
     # save dataset
-    np.save(config['data_path'] + 'data_' + str(int(time.time())) + '.npy', dataset)
+    np.save(data_path + 'data_' + str(int(time.time())) + '.npy', dataset)
 
 
 if __name__ == "__main__":
@@ -109,7 +115,7 @@ if __name__ == "__main__":
     parser.add_argument('--bern_p', type=float, default=0.7, help='Parameter for bernoulli distribution')
     parser.add_argument('--nbr_data', type=int, default=10000, help='Number of datapoints to be generated')
     parser.add_argument('--seed', type=int, default=314159, help='Random seed')
-    parser.add_argument('--data_path', type=str, default='/home/tom/Desktop/Projects/GCN_for_SAT/data/', help='Path to save the datasets')
+    parser.add_argument('--data_path', type=str, default='/data/', help='Path to save the datasets')
     parser.add_argument('--range_nbr_vars', type=list, default=[10, 40], help='Range of number of random variables')
     
     
