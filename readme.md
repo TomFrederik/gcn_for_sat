@@ -1,3 +1,4 @@
+## Readme
 This repository implements a graph convolutional network to solve SAT formulas with 10 - 40 variables.
 
 The idea of how to generate the formulas is taken from Selsam et al. (2019) 'Learning a SAT solver from single-bit supervision'
