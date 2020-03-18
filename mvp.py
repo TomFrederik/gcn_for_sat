@@ -3,8 +3,9 @@ import os
 import argparse
 import torch
 import torch.nn as nn
-from torch_geometric.data import Data
+from torch_geometric.data import Data, Batch
 from modules import gcn
+import time
 
 def make_graph(formula):
     '''
@@ -60,7 +61,7 @@ def get_graphs(formulas):
     graphs = []
     for formula in formulas:
         edge_index, features = make_graph(formula)
-        graphs.append([[edge_index, features]])
+        graphs.append([edge_index, features])
 
     return graphs
 
@@ -89,10 +90,10 @@ def main(config):
     # use targets as mask to get formulas
     X = data[0][np.arange(0,len(data[0])), targets]
 
+
     # transform into graph
     # i.e. edge indices and feature vectors
     X_graph = get_graphs(X)
-
 
     #####
     # train test split
@@ -117,10 +118,12 @@ def main(config):
     # setting up
     ####
     num_node_features = 40 # need the same feature length everywhere
+    num_hidden = 50
     num_classes = 2
     lr = 1e-2
     weight_decay = 5e-4
-    max_epochs = 10
+    max_epochs = 100
+    batch_size = 5
 
     if torch.cuda.is_available():
         device = 'cuda0'
@@ -128,10 +131,10 @@ def main(config):
         device = 'cpu'
     
 
-    model = gcn(num_node_features=num_node_features, num_classes=num_classes)
+    model = gcn(num_node_features=num_node_features, num_hidden=num_hidden, num_classes=num_classes)
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    criterion = torch.nn.CrossEntropyLoss()
+    criterion = torch.nn.NLLLoss() #neg log likelihood loss
 
     ####
     # train
@@ -142,19 +145,28 @@ def main(config):
 
     # trainings loop
     for epoch in range(max_epochs):
-        for i in range(len(train_idcs)):
-            data = Data(x=X[train_idcs[i]][1], edge_index=X[train_idcs[i]][0]).to(device)
+        epoch_loss = 0
+        for i in range(0,len(train_idcs),batch_size):
+            x_batch = Batch.from_data_list([Data(x=X_graph[train_idcs[i+k]][1], edge_index=X_graph[train_idcs[i+k]][0]) for k in range(batch_size)]).to(device)
+            out = model(x_batch)
+            
+            y_batch = torch.from_numpy(targets[i:i+batch_size]).long().to(device)
+
+
             optimizer.zero_grad()
-            out = model(data)
-            if y_train[i] == 0:
-                target = torch.tensor([1,0], dtype=torch.float, device=device)
-            else:
-                target = torch.tensor([0,1], dtype=torch.float, device=device)
-            loss = criterion(out, target)
+            loss = criterion(out, y_batch)
             loss.backward()
             optimizer.step()
             epoch_loss += loss.item()
-        print('In epoch {0:3.0d} the average training loss is {1:2.5f}'.format(epoch, epoch_loss/len(train_idcs)))
+
+        print('In epoch {0:4d} the average training loss is {1:2.5f}'.format(epoch, epoch_loss/len(train_idcs)))
+
+
+    ###
+    # save model
+    ###
+    # save model
+    torch.save(model.state_dict(), file_dir + '/models_data' + 'run_' + str(time.time()) + '.pt')
 
 if __name__ == "__main__":
      # Parse training configuration
