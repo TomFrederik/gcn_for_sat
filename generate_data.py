@@ -18,6 +18,8 @@ def get_clause(n, dists):
     '''
     # sample k
     k = sum([int(dist.rvs(size=1)) for dist in dists])
+    if k > n:
+        k = n
 
     # sample a new clause
     clause = sample_clause(k, n)
@@ -77,14 +79,14 @@ def main(config):
         
         phi = Glucose3() # instantiate phi as 0 clauses
         list_phi = [] # phi as a list for saving and inspection purposes
-        n = int(nbr_vars.rvs(size=1))
+        n = int(nbr_vars.rvs(size=1)) #nbr of vars to use in this formula
         
         sat = True
 
         while sat: 
             
             # get new clause
-            new_clause = get_clause(40, dists)
+            new_clause = get_clause(n, dists)
 
             # add clause
             phi.add_clause(new_clause)
@@ -93,14 +95,18 @@ def main(config):
             #solvable?
             sat = phi.solve()
         
-        # revert a random literal in the last clause
+        # revert a random literal in a random clause
         # to obtain a satisfiable formula
-        idx = np.random.choice(range(len(list_phi[-1])), size=1)[0]
+        clause_idx = np.random.choice(range(len(list_phi)), size=1)[0]
+        lit_idx = np.random.choice(range(len(list_phi[clause_idx])), size=1)[0]
         sat_list_phi = list_phi.copy()
-        sat_list_phi[-1][idx] *= -1
+        sat_list_phi[clause_idx][lit_idx] *= -1
         
         # append 2-tuple of [sat, unsat] to dataset
-        dataset.append([sat_list_phi, list_phi])
+        dataset.append([list_phi, sat_list_phi])
+
+        if i % 100 == 0:
+            print('{} formulas generated in total.'.format(i))
 
     # save dataset
     np.save(data_path + 'data_' + str(int(time.time())) + '.npy', dataset)
