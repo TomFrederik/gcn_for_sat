@@ -101,7 +101,7 @@ def main(config):
     # train test split
     #####
 
-    split_idx = 7000
+    split_idx = 1000
 
     shuffle_idcs = np.arange(0,len(X_graph))
     np.random.shuffle(shuffle_idcs)
@@ -124,10 +124,10 @@ def main(config):
     num_node_features = 40 # need the same feature length everywhere
     num_hidden = 50
     num_classes = 2
-    lr = 1e-2
-    weight_decay = 5e-4
+    lr = 2e-5
+    weight_decay = 1e-10
     max_epochs = 100
-    batch_size = 5
+    batch_size = 2
 
     if torch.cuda.is_available():
         device = 'cuda:0'
@@ -162,6 +162,8 @@ def main(config):
             loss.backward()
             optimizer.step()
             epoch_loss += loss.item()
+            if i % 100 == 0:
+                print('Step {} in epoch {} reached.'.format(i, epoch))
 
         print('In epoch {0:4d} the average training loss is {1:2.5f}'.format(epoch, epoch_loss/len(train_idcs)))
 
