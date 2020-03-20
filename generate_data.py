@@ -5,6 +5,7 @@ import argparse
 import pysat.solvers as solv
 from pysat.solvers import Glucose3
 import time
+import torch
 import os
 
 def get_clause(n, dists):
@@ -48,6 +49,50 @@ def sample_clause(k, n):
 
     return clause
 
+def make_graph(formula):
+    '''
+    converts a sat formula to a graph
+    input: A sat formula as list of clauses (lists)
+    returns: the edge indices, a 2 X E tensor, and the feature vectors for each node
+
+    Each variable and clause is represented by a node.
+    If a variable is (negatively or positively) part of a clause, there is an edge between the two
+    The features for each variable is a 1 x N vector of 1s
+    The feature for each clause is a 1 x N vector encoding whether each variable is positive, negative
+    or not contained in this clause
+    '''
+
+    # disregard sign of literal for edges
+    abs_clauses = [np.abs(clause) for clause in formula]
+
+    n = np.max([np.max(clause) for clause in abs_clauses]) # nbr of variables
+
+    
+    edge_indices = []
+    features = []
+    
+    # features for nodes are just 1, need to have same number across all graphs
+    features.append(torch.ones((n,40), dtype=torch.float))
+    
+    for i in range(len(abs_clauses)):
+        feature = torch.zeros((1, 40), dtype=torch.float)
+        for j in range(len(abs_clauses[i])):
+            # undirected edge between clause i and variable at position j in clause i
+            edge_indices.append(torch.tensor([[abs_clauses[i][j]-1, n+i]], dtype=torch.long))
+            edge_indices.append(torch.tensor([[n+i, abs_clauses[i][j]-1]], dtype=torch.long))
+
+            # feature +1 if literal is positive, -1 if negative, 0 if not there
+            feature[:,abs_clauses[i][j]-1] = torch.sign(torch.tensor(formula[i][j], dtype=torch.float)).float()
+            features.append(feature)
+
+    # make one tensor
+    edge_index = torch.cat(edge_indices, dim=0)
+    features = torch.cat(features, dim=0)
+
+    # transpose to bring into format for torch_geometric
+    edge_index = edge_index.t().contiguous()
+
+    return edge_index, features
 
 def main(config):
 
@@ -102,15 +147,29 @@ def main(config):
         sat_list_phi = list_phi.copy()
         sat_list_phi[clause_idx][lit_idx] *= -1
         
-        # append 2-tuple of [sat, unsat] to dataset
+        # append 2-tuple of [unsat, sat] to dataset
         dataset.append([list_phi, sat_list_phi])
 
         if i % 100 == 0:
             print('{} formulas generated in total.'.format(i))
+    
+    ###
+    # make graphs
+    ###
+    print('making graphs....')
+    edges=[[], []]
+    features = [[], []]
+    for i in range(len(dataset)):
+        for j in range(2):
+            # make graph
+            edge_index, X = make_graph(dataset[i][j])
+            edges[j].append(edge_index)
+            features[j].append(X)
+        print('Already made {} graphs.'.format(i))
 
     # save dataset
-    np.save(data_path + 'data_' + str(int(time.time())) + '.npy', dataset)
-
+    torch.save(edges, data_path + 'edges' + str(int(time.time())) + '.pt')
+    torch.save(features, data_path + 'features' + str(int(time.time())) + '.pt')
 
 if __name__ == "__main__":
      # Parse training configuration

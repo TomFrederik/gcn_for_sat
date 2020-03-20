@@ -6,64 +6,8 @@ import torch.nn as nn
 from torch_geometric.data import Data, Batch
 from modules import gcn
 import time
+import matplotlib.pyplot as plt
 
-def make_graph(formula):
-    '''
-    converts a sat formula to a graph
-    input: A sat formula as list of clauses (lists)
-    returns: the edge indices, a 2 X E tensor, and the feature vectors for each node
-
-    Each variable and clause is represented by a node.
-    If a variable is (negatively or positively) part of a clause, there is an edge between the two
-    The features for each variable is a 1 x N vector of 1s
-    The feature for each clause is a 1 x N vector encoding whether each variable is positive, negative
-    or not contained in this clause
-    '''
-
-    # disregard sign of literal for edges
-    abs_clauses = [np.abs(clause) for clause in formula]
-
-    n = np.max([np.max(clause) for clause in abs_clauses]) # nbr of variables
-
-    
-    edge_indices = []
-    features = []
-    
-    # features for nodes are just 1, need to have same number across all graphs
-    features.append(torch.ones((n,40), dtype=torch.float))
-    
-    for i in range(len(abs_clauses)):
-        feature = torch.zeros((1, 40), dtype=torch.float)
-        for j in range(len(abs_clauses[i])):
-            # undirected edge between clause i and variable at position j in clause i
-            edge_indices.append(torch.tensor([[abs_clauses[i][j]-1, n+i]], dtype=torch.long))
-            edge_indices.append(torch.tensor([[n+i, abs_clauses[i][j]-1]], dtype=torch.long))
-
-            # feature +1 if literal is positive, -1 if negative, 0 if not there
-            feature[:,abs_clauses[i][j]-1] = torch.sign(torch.tensor(formula[i][j], dtype=torch.float)).float()
-            features.append(feature)
-
-    # make one tensor
-    edge_index = torch.cat(edge_indices, dim=0)
-    features = torch.cat(features, dim=0)
-
-    # transpose to bring into format for torch_geometric
-    edge_index = edge_index.t().contiguous()
-
-    return edge_index, features
-
-
-def get_graphs(formulas):
-    '''
-    input: list of sat formulas
-    returns: list of graphs, represented by tuples [edge_indices, features]
-    '''
-    graphs = []
-    for formula in formulas:
-        edge_index, features = make_graph(formula)
-        graphs.append([edge_index, features])
-
-    return graphs
 
 def main(config):
 
@@ -76,32 +20,47 @@ def main(config):
     # get path of code file
     file_dir = os.path.dirname(os.path.realpath(__file__))
     data_path = file_dir + config['data_path']
+    plot_path = file_dir + '/plots/'
+    model_path = file_dir + '/models/'
     print('Data path is ' + data_path)
     
     # get list of files
     (_, _, filenames) = os.walk(data_path).__next__()
-    
+    edge_files = [file for file in filenames if file[:5] == 'edges']
+    feature_files = [file for file in filenames if file[:8] == 'features']
     print('Preparing data..')
 
     # load data
-    data = [np.load(data_path+file, allow_pickle=True) for file in filenames]
+    # each file contains a list of two lists of tensors that represent
+    # the edges and features of graphs respectively.
+    edges = [[], []]
+    features = [[], []]
+    for i in range(len(edge_files)):
+        edge_data = torch.load(data_path+edge_files[i])
+        edges[0].extend(edge_data[0])
+        edges[1].extend(edge_data[1])
+        features_data = torch.load(data_path+feature_files[i])
+        features[0].extend(features_data[0])
+        features[1].extend(features_data[1])
     
     # sample targets
-    targets = np.random.choice([0, 1], size=len(data[0])) # 0 means unsat, 1 means sat
+    targets = np.random.choice([0, 1], size=len(edges[0])) # 0 means unsat, 1 means sat
 
     # use targets as mask to get formulas
-    X = data[0][np.arange(0,len(data[0])), targets]
+    # for now only use the first file
+    X_graph = []
+    for i in range(len(edges[0])):
+        X_graph.append([edges[targets[i]].pop(0), features[targets[i]].pop(0)])
 
-
-    # transform into graph
-    # i.e. edge indices and feature vectors
-    X_graph = get_graphs(X)
+    # clear from RAM
+    edges.clear()
+    features.clear()
 
     #####
     # train test split
     #####
 
-    split_idx = 1000
+    split_idx = 5
 
     shuffle_idcs = np.arange(0,len(X_graph))
     np.random.shuffle(shuffle_idcs)
@@ -127,7 +86,7 @@ def main(config):
     lr = 2e-5
     weight_decay = 1e-10
     max_epochs = 100
-    batch_size = 2
+    batch_size = 50
 
     if torch.cuda.is_available():
         device = 'cuda:0'
@@ -147,15 +106,16 @@ def main(config):
     # training mode
     model.train()
 
+    losses = []
+
     # trainings loop
     for epoch in range(max_epochs):
         epoch_loss = 0
-        for i in range(0,len(train_idcs),batch_size):
+        for i in range(0,len(train_idcs)-batch_size,batch_size):
             x_batch = Batch.from_data_list([Data(x=X_graph[train_idcs[i+k]][1], edge_index=X_graph[train_idcs[i+k]][0]) for k in range(batch_size)]).to(device)
             out = model(x_batch)
             
             y_batch = torch.from_numpy(targets[i:i+batch_size]).long().to(device)
-
 
             optimizer.zero_grad()
             loss = criterion(out, y_batch)
@@ -164,15 +124,20 @@ def main(config):
             epoch_loss += loss.item()
             if i % 100 == 0:
                 print('Step {} in epoch {} reached.'.format(i, epoch))
-
+        losses.append(epoch_loss)
         print('In epoch {0:4d} the average training loss is {1:2.5f}'.format(epoch, epoch_loss/len(train_idcs)))
 
+    plt.figure()
+    plt.plot(np.arange(max_epochs), losses)
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+    plt.savefig(plot_path + 'train_loss_' + str(time.time())+ '.pdf')
 
     ###
     # save model
     ###
     # save model
-    torch.save(model.state_dict(), file_dir + '/models_data' + 'run_' + str(time.time()) + '.pt')
+    torch.save(model.state_dict(), model_path + 'run_' + str(time.time()) + '.pt')
 
 if __name__ == "__main__":
      # Parse training configuration
