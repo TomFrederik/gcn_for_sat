@@ -81,6 +81,8 @@ def main(config):
     # get list of files
     (_, _, filenames) = os.walk(data_path).__next__()
     
+    print('Preparing data..')
+
     # load data
     data = [np.load(data_path+file, allow_pickle=True) for file in filenames]
     
@@ -117,6 +119,8 @@ def main(config):
     ####
     # setting up
     ####
+    print('Preparing model...')
+    
     num_node_features = 40 # need the same feature length everywhere
     num_hidden = 50
     num_classes = 2
@@ -126,7 +130,7 @@ def main(config):
     batch_size = 5
 
     if torch.cuda.is_available():
-        device = 'cuda0'
+        device = 'cuda:0'
     else:
         device = 'cpu'
     
@@ -139,7 +143,7 @@ def main(config):
     ####
     # train
     ####
-
+    print('Training..')
     # training mode
     model.train()
 
