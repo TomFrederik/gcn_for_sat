@@ -108,36 +108,66 @@ def main(config):
     model.train()
 
     losses = []
+    accs = []
 
     # trainings loop
     for epoch in range(max_epochs):
+        
         epoch_loss = 0
+        epoch_acc = 0
+        
         for i in range(0,len(train_idcs)-batch_size,batch_size):
-            x_batch = Batch.from_data_list([Data(x=X_graph[train_idcs[i+k]][1], edge_index=X_graph[train_idcs[i+k]][0]) for k in range(batch_size)]).to(device)
-            out = model(x_batch)
             
             y_batch = torch.from_numpy(targets[i:i+batch_size]).long().to(device)
+            x_batch = Batch.from_data_list([Data(x=X_graph[train_idcs[i+k]][1], edge_index=X_graph[train_idcs[i+k]][0]) for k in range(batch_size)]).to(device)
+            
+            # forward pass
+            out = model(x_batch)
+            
+            # compute accuracy
+            indices = torch.argmax(out, dim=1)
+            correct = (y_batch.eq(indices.long())).sum()
+            accuracy = correct / y_batch.shape[0]
 
+            # backward pass
             optimizer.zero_grad()
             loss = criterion(out, y_batch)
             loss.backward()
             optimizer.step()
+
+            # logging
             epoch_loss += loss.item()
+            epoch_acc += accuracy
+
+        # more logging
+        epoch_acc /= i + batch_size + 1
+        epoch_loss /= i + batch_size + 1
+        accs.append(epoch_acc)    
         losses.append(epoch_loss)
+
         # adapt learning rate
         scheduler.step()
-        print('In epoch {0:4d} the average training loss is {1:2.5f}'.format(epoch, epoch_loss/len(train_idcs)))
 
-    plt.figure()
+        # monitoring
+        print('In epoch {0:4d} the average training loss is {1:2.5f}'.format(epoch, epoch_loss))
+        print('In epoch {0:4d} the average training acc is {1:2.5f}'.format(epoch, epoch_acc))
+
+    # save plots
+    plt.figure(1)
     plt.plot(np.arange(max_epochs), losses)
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
     plt.savefig(plot_path + 'train_loss_' + str(time.time())+ '.pdf')
+    
+    plt.figure(2)
+    plt.plot(np.arange(max_epochs), accs)
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+    plt.savefig(plot_path + 'train_acc_' + str(time.time())+ '.pdf')
 
     ###
     # save model
     ###
-    # save model
     torch.save(model.state_dict(), model_path + 'run_' + str(time.time()) + '.pt')
 
 if __name__ == "__main__":
