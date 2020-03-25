@@ -18,12 +18,12 @@ class gcn(torch.nn.Module):
         # first conv
         x = self.conv1(x, edge_index)
         x = F.relu(x)
-        x = F.dropout(x, training=self.training)
+        #x = F.dropout(x, training=self.training)
         
         # second conv
         x = self.conv2(x, edge_index)
         x = F.relu(x)
-        x = F.dropout(x)
+        #x = F.dropout(x)
 
         # pooling
         x = global_mean_pool(x, data.batch)
@@ -31,7 +31,7 @@ class gcn(torch.nn.Module):
         # linear layers
         x = torch.unsqueeze(x, dim=0) # unsqueeze for linear layer (simulate batch)
         x = self.linear1(x)
-        x = F.dropout(x)
+        #x = F.dropout(x)
         x = F.relu(x)
 
         x = self.linear2(x)
