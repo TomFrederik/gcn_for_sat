@@ -85,7 +85,7 @@ def main(config):
     num_classes = 2
     lr = 2e-3
     weight_decay = 1e-10
-    max_epochs = 600
+    max_epochs = 400
     batch_size = 50
 
     if torch.cuda.is_available():
@@ -115,9 +115,11 @@ def main(config):
         
         epoch_loss = 0
         epoch_acc = 0
-        
+        steps = 0
+
         for i in range(0,len(train_idcs)-batch_size,batch_size):
-            
+            steps += 1            
+        
             y_batch = torch.from_numpy(targets[i:i+batch_size]).long().to(device)
             x_batch = Batch.from_data_list([Data(x=X_graph[train_idcs[i+k]][1], edge_index=X_graph[train_idcs[i+k]][0]) for k in range(batch_size)]).to(device)
             
@@ -125,9 +127,10 @@ def main(config):
             out = model(x_batch)
             
             # compute accuracy
-            indices = torch.argmax(out, dim=1)
+            probs = torch.exp(out) 
+            indices = torch.argmax(probs, dim=1)
             correct = (y_batch.eq(indices.long())).sum()
-            accuracy = correct / y_batch.shape[0]
+            accuracy = correct.item() / y_batch.shape[0]
 
             # backward pass
             optimizer.zero_grad()
@@ -138,10 +141,9 @@ def main(config):
             # logging
             epoch_loss += loss.item()
             epoch_acc += accuracy
-
         # more logging
-        epoch_acc /= i + batch_size + 1
-        epoch_loss /= i + batch_size + 1
+        epoch_acc /= steps
+        epoch_loss /= steps
         accs.append(epoch_acc)    
         losses.append(epoch_loss)
 
