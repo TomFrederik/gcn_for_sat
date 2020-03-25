@@ -60,7 +60,7 @@ def main(config):
     # train test split
     #####
 
-    split_idx = 5
+    split_idx = 8000
 
     shuffle_idcs = np.arange(0,len(X_graph))
     np.random.shuffle(shuffle_idcs)
@@ -83,9 +83,9 @@ def main(config):
     num_node_features = 40 # need the same feature length everywhere
     num_hidden = 50
     num_classes = 2
-    lr = 2e-5
+    lr = 2e-3
     weight_decay = 1e-10
-    max_epochs = 100
+    max_epochs = 600
     batch_size = 50
 
     if torch.cuda.is_available():
@@ -97,6 +97,7 @@ def main(config):
     model = gcn(num_node_features=num_node_features, num_hidden=num_hidden, num_classes=num_classes)
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.1)
     criterion = torch.nn.NLLLoss() #neg log likelihood loss
 
     ####
@@ -122,9 +123,9 @@ def main(config):
             loss.backward()
             optimizer.step()
             epoch_loss += loss.item()
-            if i % 100 == 0:
-                print('Step {} in epoch {} reached.'.format(i, epoch))
         losses.append(epoch_loss)
+        # adapt learning rate
+        scheduler.step()
         print('In epoch {0:4d} the average training loss is {1:2.5f}'.format(epoch, epoch_loss/len(train_idcs)))
 
     plt.figure()
