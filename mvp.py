@@ -85,8 +85,8 @@ def main(config):
     num_classes = 2
     lr = 2e-3
     weight_decay = 1e-10
-    max_epochs = 400
-    batch_size = 50
+    max_epochs = 200
+    batch_size = 100
 
     if torch.cuda.is_available():
         device = 'cuda:0'
@@ -97,7 +97,7 @@ def main(config):
     model = gcn(num_node_features=num_node_features, num_hidden=num_hidden, num_classes=num_classes)
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
     criterion = torch.nn.NLLLoss() #neg log likelihood loss
 
     ####

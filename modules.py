@@ -6,8 +6,9 @@ from torch_geometric.nn import GCNConv, global_mean_pool
 class gcn(torch.nn.Module):
     def __init__(self, num_node_features, num_hidden, num_classes):
         super(gcn, self).__init__()
-        self.conv1 = GCNConv(num_node_features, 16)
-        self.conv2 = GCNConv(16, num_hidden)
+        self.conv1 = GCNConv(num_node_features, num_hidden)
+        self.conv2 = GCNConv(num_hidden, num_hidden)
+        self.conv3 = GCNConv(num_hidden, num_hidden)
         self.linear1 = torch.nn.Linear(num_hidden, num_hidden)
         self.linear2 = torch.nn.Linear(num_hidden, num_classes)
         
@@ -25,6 +26,11 @@ class gcn(torch.nn.Module):
         x = F.relu(x)
         #x = F.dropout(x)
 
+        # third conv
+        x = self.conv3(x, edge_index)
+        x = F.relu(x)
+        #x = F.dropout(x)
+        
         # pooling
         x = global_mean_pool(x, data.batch)
         
