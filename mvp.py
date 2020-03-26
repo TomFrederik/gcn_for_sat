@@ -60,7 +60,7 @@ def main(config):
     # train test split
     #####
 
-    split_idx = 8000
+    split_idx = 40000
 
     shuffle_idcs = np.arange(0,len(X_graph))
     np.random.shuffle(shuffle_idcs)
@@ -81,11 +81,11 @@ def main(config):
     print('Preparing model...')
     
     num_node_features = 40 # need the same feature length everywhere
-    num_hidden = 20
+    num_hidden = 30
     num_classes = 2
     lr = 2e-3
-    weight_decay = 1e-8
-    max_epochs = 100
+    weight_decay = 1e-6
+    max_epochs = 200
     batch_size = 100
 
     if torch.cuda.is_available():
@@ -188,6 +188,7 @@ def main(config):
         # monitoring
         print('In epoch {0:4d} the average test acc is {1:2.5f}'.format(epoch, test_acc))
         print('In epoch {0:4d} the average training acc is {1:2.5f}'.format(epoch, epoch_acc))
+        print('In epoch {0:4d} the average training loss is {1:2.5f}'.format(epoch, epoch_loss))
 
     # save plots
     plt.figure(1)
