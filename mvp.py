@@ -109,6 +109,8 @@ def main(config):
 
     losses = []
     accs = []
+    test_losses = []
+    test_accs = []
 
     # trainings loop
     for epoch in range(max_epochs):
@@ -120,7 +122,7 @@ def main(config):
         for i in range(0,len(train_idcs)-batch_size,batch_size):
             steps += 1            
         
-            y_batch = torch.from_numpy(targets[i:i+batch_size]).long().to(device)
+            y_batch = torch.from_numpy(y_train[i:i+batch_size]).long().to(device)
             x_batch = Batch.from_data_list([Data(x=X_graph[train_idcs[i+k]][1], edge_index=X_graph[train_idcs[i+k]][0]) for k in range(batch_size)]).to(device)
             
             # forward pass
@@ -141,31 +143,64 @@ def main(config):
             # logging
             epoch_loss += loss.item()
             epoch_acc += accuracy
+
+        # evaluate on test set
+        test_loss = 0
+        test_acc = 0
+        steps = 0
+        for i in range(0,len(test_idcs)-batch_size,batch_size):
+            steps += 1            
+        
+            y_batch = torch.from_numpy(y_test[i:i+batch_size]).long().to(device)
+            x_batch = Batch.from_data_list([Data(x=X_graph[test_idcs[i+k]][1], edge_index=X_graph[test_idcs[i+k]][0]) for k in range(batch_size)]).to(device)
+            
+            # forward pass
+            out = model(x_batch)
+            
+            # compute accuracy
+            probs = torch.exp(out) 
+            indices = torch.argmax(probs, dim=1)
+            correct = (y_batch.eq(indices.long())).sum()
+            accuracy = correct.item() / y_batch.shape[0]
+
+            # backward pass
+            loss = criterion(out, y_batch)
+
+            # logging
+            test_loss += loss.item()
+            test_acc += accuracy
+
         # more logging
         epoch_acc /= steps
         epoch_loss /= steps
+        test_acc /= steps
+        test_loss /= steps
         accs.append(epoch_acc)    
         losses.append(epoch_loss)
+        test_accs.append(test_acc)
+        test_losses.append(test_loss)
 
         # adapt learning rate
         scheduler.step()
 
         # monitoring
-        print('In epoch {0:4d} the average training loss is {1:2.5f}'.format(epoch, epoch_loss))
+        print('In epoch {0:4d} the average test acc is {1:2.5f}'.format(epoch, test_acc))
         print('In epoch {0:4d} the average training acc is {1:2.5f}'.format(epoch, epoch_acc))
 
     # save plots
     plt.figure(1)
-    plt.plot(np.arange(max_epochs), losses)
+    plt.plot(np.arange(len(losses)), losses, label='train loss')
+    plt.plot(np.arange(len(losses)), test_losses, label='test loss')
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
-    plt.savefig(plot_path + 'train_loss_' + str(time.time())+ '.pdf')
+    plt.savefig(plot_path + 'loss_' + str(time.time())+ '.pdf')
     
     plt.figure(2)
-    plt.plot(np.arange(max_epochs), accs)
+    plt.plot(np.arange(len(losses)), accs, label='train acc')
+    plt.plot(np.arange(len(losses)), test_accs, label='test acc')
     plt.ylabel('Accuracy')
     plt.xlabel('Epoch')
-    plt.savefig(plot_path + 'train_acc_' + str(time.time())+ '.pdf')
+    plt.savefig(plot_path + 'acc_' + str(time.time())+ '.pdf')
 
     ###
     # save model
