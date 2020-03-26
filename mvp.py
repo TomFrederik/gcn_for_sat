@@ -71,8 +71,8 @@ def main(config):
     #X_train = X_graph[shuffle_idcs[:split_idx]]
     #X_test = X_graph[shuffle_idcs[split_idx:]]
 
-    y_train = targets[shuffle_idcs[:split_idx]]
-    y_test = targets[shuffle_idcs[split_idx:]]
+    y_train = targets[train_idcs]
+    y_test = targets[test_idcs]
 
 
     ####
@@ -84,8 +84,8 @@ def main(config):
     num_hidden = 50
     num_classes = 2
     lr = 2e-3
-    weight_decay = 1e-10
-    max_epochs = 200
+    weight_decay = 1e-8
+    max_epochs = 100
     batch_size = 100
 
     if torch.cuda.is_available():
@@ -144,6 +144,10 @@ def main(config):
             epoch_loss += loss.item()
             epoch_acc += accuracy
 
+        # more logging
+        epoch_acc /= steps
+        epoch_loss /= steps
+
         # evaluate on test set
         test_loss = 0
         test_acc = 0
@@ -171,8 +175,6 @@ def main(config):
             test_acc += accuracy
 
         # more logging
-        epoch_acc /= steps
-        epoch_loss /= steps
         test_acc /= steps
         test_loss /= steps
         accs.append(epoch_acc)    

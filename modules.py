@@ -8,7 +8,6 @@ class gcn(torch.nn.Module):
         super(gcn, self).__init__()
         self.conv1 = GCNConv(num_node_features, num_hidden)
         self.conv2 = GCNConv(num_hidden, num_hidden)
-        self.conv3 = GCNConv(num_hidden, num_hidden)
         self.linear1 = torch.nn.Linear(num_hidden, num_hidden)
         self.linear2 = torch.nn.Linear(num_hidden, num_classes)
         
@@ -19,18 +18,13 @@ class gcn(torch.nn.Module):
         # first conv
         x = self.conv1(x, edge_index)
         x = F.relu(x)
-        #x = F.dropout(x, training=self.training)
+        x = F.dropout(x, p=0.1, training=self.training)
         
         # second conv
         x = self.conv2(x, edge_index)
         x = F.relu(x)
-        #x = F.dropout(x)
+        x = F.dropout(x, p=0.1, training=self.training)
 
-        # third conv
-        x = self.conv3(x, edge_index)
-        x = F.relu(x)
-        #x = F.dropout(x)
-        
         # pooling
         x = global_mean_pool(x, data.batch)
         
