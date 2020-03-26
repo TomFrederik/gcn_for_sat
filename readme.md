@@ -10,7 +10,7 @@ As in the paper, the formulas are sampled as follows:
 
 2. While the formula is still satisfiable, generate a clause as follows:
 
-  Draw the number of literals k from the distribution 1 + Bernoulli(p=0.7) + Geo (p=0.4). 
+  Draw the number of literals k from the distribution 1 + Bernoulli(p=0.7) + Geo(p=0.4). 
 
   If, by chance, k > n, then set k = n.
 
@@ -22,7 +22,7 @@ As in the paper, the formulas are sampled as follows:
 
   The negated literal means that the formula is satisfiable.
 
-6. We repeat this a hundred thousand times and have 100,000 pairs of sat formulas, one satisfiable, the other one not.
+6. We repeat this fifty thousand times and have 50,000 pairs of sat formulas, one satisfiable, the other one not.
 
 At test time we will sample randomly whether to select the sat or the unsat formula.
 
@@ -32,7 +32,7 @@ In the paper, the authors did not mention which embedding they used for their no
 I on the other hand wanted to work with the features explicitly so I opted for a different topology. Each variable is assigned its own node with unit features of lenght 40 (max number of variables). Each clause has its own node.
 If a variable is in a clause (negative or positive), we define an edge between the two corresponding nodes. 
 
-The clause node features are 1 x 40 vectors with entries of 1 (positive variableis in clause), -1 (negative) or 0 (variable not in clause)
+The clause node features are 1 x 40 vectors with entries of 1 (positive variable is in clause), -1 (negative) or 0 (variable not in clause)
 
 ## The network
 I use the pytorch geometric package to do the heavy lifting of the graph convolutions.
@@ -42,5 +42,15 @@ After each layer ReLU and dropout is employed, except for the last layer after w
 
 As a loss, the negative log-likelihood loss is used.
 
+## Best Hyperparameters
+weight decay = 2e-8
+lr = 2e-4
+step_decay = factor 10 each 50 epochs
+max_epochs = 100
+batch_size = 100
 
 ## Results
+
+
+
+
