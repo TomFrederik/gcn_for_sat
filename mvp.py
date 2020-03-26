@@ -81,7 +81,7 @@ def main(config):
     print('Preparing model...')
     
     num_node_features = 40 # need the same feature length everywhere
-    num_hidden = 50
+    num_hidden = 20
     num_classes = 2
     lr = 2e-3
     weight_decay = 1e-8
@@ -195,6 +195,7 @@ def main(config):
     plt.plot(np.arange(len(losses)), test_losses, label='test loss')
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
+    plt.legend()
     plt.savefig(plot_path + 'loss_' + str(time.time())+ '.pdf')
     
     plt.figure(2)
@@ -202,6 +203,7 @@ def main(config):
     plt.plot(np.arange(len(losses)), test_accs, label='test acc')
     plt.ylabel('Accuracy')
     plt.xlabel('Epoch')
+    plt.legend()
     plt.savefig(plot_path + 'acc_' + str(time.time())+ '.pdf')
 
     ###
