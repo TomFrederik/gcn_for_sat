@@ -44,9 +44,13 @@ As a loss, the negative log-likelihood loss is used.
 
 ## Best Hyperparameters
 weight decay = 2e-8
+
 lr = 2e-4
+
 step_decay = factor 10 each 50 epochs
+
 max_epochs = 100
+
 batch_size = 100
 
 ## Results
