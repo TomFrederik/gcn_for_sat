@@ -4,7 +4,7 @@ import argparse
 import torch
 import torch.nn as nn
 from torch_geometric.data import Data, Batch
-from modules import gcn
+from modules import deep_gcn
 import time
 import matplotlib.pyplot as plt
 
@@ -41,18 +41,18 @@ def main(config):
     weight_decay = 1e-10
     max_epochs = 50
     batch_size = 100
-    early_stop = 10
+    early_stop = 20
+    depth = 26
 
     if torch.cuda.is_available():
         device = 'cuda:0'
     else:
         device = 'cpu'
     
-
-    model = gcn(num_node_features=num_node_features, num_hidden=num_hidden, num_classes=num_classes)
+  
+    model = deep_gcn(num_node_features=num_node_features, num_hidden=num_hidden, num_classes=num_classes, depth=26)
+    
     model.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
     criterion = torch.nn.NLLLoss() #neg log likelihood loss
 
     losses = []
@@ -62,6 +62,10 @@ def main(config):
     
     for file_nbr in range(len(edge_files)):
         print('Now training on file nbr {}'.format(file_nbr+1))
+        # reset opt and sched
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+        
         edges = [[], []]
         features = [[], []]
         edge_data = torch.load(data_path+edge_files[file_nbr])
@@ -199,9 +203,10 @@ def main(config):
             scheduler.step()
 
             # monitoring
-            print('In epoch {0:4d} the average test acc is {1:2.5f}'.format(epoch, test_acc))
             print('In epoch {0:4d} the average training acc is {1:2.5f}'.format(epoch, epoch_acc))
-            #print('In epoch {0:4d} the average training loss is {1:2.5f}'.format(epoch, epoch_loss))
+            print('In epoch {0:4d} the average test acc is {1:2.5f}'.format(epoch, test_acc))
+            print('In epoch {0:4d} the average training loss is {1:2.5f}'.format(epoch, epoch_loss))
+            print('In epoch {0:4d} the average test loss is {1:2.5f}'.format(epoch, test_loss))
 
             if ctr == early_stop:
                 print('Eartly stopping criterion has been reached, continuing with next file.')
