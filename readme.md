@@ -43,9 +43,9 @@ After each layer ReLU and dropout is employed, except for the last layer after w
 As a loss, the negative log-likelihood loss is used.
 
 ## Best Hyperparameters
-weight decay = 2e-8
+weight decay = 1e-10
 
-lr = 2e-4
+lr = 2e-3
 
 step_decay = factor 10 each 50 epochs
 
@@ -54,7 +54,16 @@ max_epochs = 100
 batch_size = 100
 
 ## Results
+# All data at once
+The model does not learn the test set, rather simply learns the training set, leading to a significant overfitting. I do not know whether this is due  to the different topology, which might make the problem harder, or due to an insufficient amount of training data. In the paper, the authors claim to have used millions of training samples compared to my 50.000 which might explain it.
+<object data="https://github.com/TomFrederik/gcn_for_sat/blob/master/plots/acc_1585216030.118168.pdf" type="application/pdf" width="700px" height="700px">
+    <embed src="https://github.com/TomFrederik/gcn_for_sat/blob/master/plots/acc_1585216030.118168.pdf">
+        <p>This browser does not support PDFs. Please download the PDF to view it: <a href="https://github.com/TomFrederik/gcn_for_sat/blob/master/plots/acc_1585216030.118168.pdf">Download PDF</a>.</p>
+    </embed>
+</object>
 
+# Switch files
+In an attempt to avoid overfitting, and to handle larger amounts of data, I switch from having one big training set to training/evaluating on one set, then, once an early stopping criterion is reached, I switch to the next set. 
 
 
 
