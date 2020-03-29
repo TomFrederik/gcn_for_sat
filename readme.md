@@ -43,11 +43,11 @@ After each layer ReLU and dropout is employed, except for the last layer after w
 As a loss, the negative log-likelihood loss is used.
 
 ## Best Hyperparameters
-weight decay = 1e-10
+weight decay = 0
 
 lr = 2e-3
 
-step_decay = factor 10 each 50 epochs
+step_decay = factor 10 each 10 epochs
 
 max_epochs = 100
 
