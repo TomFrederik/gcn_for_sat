@@ -37,7 +37,7 @@ The clause node features are 1 x 40 vectors with entries of 1 (positive variable
 ## The network
 I use the pytorch geometric package to do the heavy lifting of the graph convolutions.
 
-The network is comprised of two graph convolutional layers and two linear layers for classification.
+The network is comprised of 26 graph convolutional layers and two linear layers for classification.
 After each layer ReLU and dropout is employed, except for the last layer after which we just use log_softmax to assign probabilities to the two classes (sat, unsat).
 
 As a loss, the negative log-likelihood loss is used.
@@ -53,14 +53,15 @@ max_epochs = 100
 
 batch_size = 100
 
-## Results
-# All data at once
+# Results
+## All data at once
 The model does not learn the test set, rather simply learns the training set, leading to a significant overfitting. I do not know whether this is due  to the different topology, which might make the problem harder, or due to an insufficient amount of training data. In the paper, the authors claim to have used millions of training samples compared to my 50.000 which might explain it.
 https://docs.google.com/viewer?url=https://github.com/TomFrederik/gcn_for_sat/raw/master/plots/acc_1585216030.118168.pdf
 
 
-# Switch files
+## Switch files
 In an attempt to avoid overfitting, and to handle larger amounts of data, I switch from having one big training set to training/evaluating on one set, then, once an early stopping criterion is reached, I switch to the next set. 
 
-
+This also did not work as well as intended.
+https://docs.google.com/viewer?url=
 
