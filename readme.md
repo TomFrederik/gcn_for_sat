@@ -38,6 +38,7 @@ The clause node features are 1 x 40 vectors with entries of 1 (positive variable
 I use the pytorch geometric package to do the heavy lifting of the graph convolutions.
 
 The network is comprised of 26 graph convolutional layers and two linear layers for classification.
+The paper used 26 iterations of message passing between nodes.
 After each layer ReLU and dropout is employed, except for the last layer after which we just use log_softmax to assign probabilities to the two classes (sat, unsat).
 
 As a loss, the negative log-likelihood loss is used.
@@ -62,6 +63,6 @@ https://docs.google.com/viewer?url=https://github.com/TomFrederik/gcn_for_sat/ra
 ## Switch files
 In an attempt to avoid overfitting, and to handle larger amounts of data, I switch from having one big training set to training/evaluating on one set, then, once an early stopping criterion is reached, I switch to the next set. 
 
-This also did not work as well as intended.
-https://docs.google.com/viewer?url=
+This also did not work as well as intended, as can be seen in the plot file.
+https://docs.google.com/viewer?url=https://github.com/TomFrederik/gcn_for_sat/raw/master/plots/loss_1585487995.3005795.pdf
 
