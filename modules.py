@@ -29,7 +29,7 @@ class deep_gcn(nn.Module):
             # conv
             x = self.convs[i](x, edge_index)
             x = F.relu(x)
-            x = F.dropout(x, p=0.1, training=self.training)
+            #x = F.dropout(x, p=0.1, training=self.training)
 
 
         # pooling

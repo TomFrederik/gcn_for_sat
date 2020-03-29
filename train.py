@@ -39,10 +39,10 @@ def main(config):
     num_classes = 2
     lr = 2e-3
     weight_decay = 1e-10
-    max_epochs = 50
+    max_epochs = 100
     batch_size = 100
     early_stop = 20
-    depth = 26
+    depth = 10
 
     if torch.cuda.is_available():
         device = 'cuda:0'
@@ -64,7 +64,7 @@ def main(config):
         print('Now training on file nbr {}'.format(file_nbr+1))
         # reset opt and sched
         optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
         
         edges = [[], []]
         features = [[], []]
