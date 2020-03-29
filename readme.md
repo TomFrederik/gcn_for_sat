@@ -58,7 +58,6 @@ batch_size = 100
 The model does not learn the test set, rather simply learns the training set, leading to a significant overfitting. I do not know whether this is due  to the different topology, which might make the problem harder, or due to an insufficient amount of training data. In the paper, the authors claim to have used millions of training samples compared to my 50.000 which might explain it.
 <object data="https://github.com/TomFrederik/gcn_for_sat/blob/master/plots/acc_1585216030.118168.pdf" type="application/pdf" width="700px" height="700px">
     <embed src="https://github.com/TomFrederik/gcn_for_sat/blob/master/plots/acc_1585216030.118168.pdf">
-       
     </embed>
 </object>
 
